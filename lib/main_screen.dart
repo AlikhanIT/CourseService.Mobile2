@@ -87,7 +87,7 @@ class _MainScreenState extends State<MainScreen> {
     _widgetOptions = [
       CourseScreen(courses: allCourses),
       CourseScreen(courses: myCourses),
-      ProfileScreen(user: User(id: '1', name: 'Иван Иванов', email: 'ivan@example.com')),
+      const LoginScreen(),
     ];
   }
 
