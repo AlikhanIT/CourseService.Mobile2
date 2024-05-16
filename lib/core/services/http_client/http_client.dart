@@ -83,7 +83,6 @@ class _HttpClient implements BaseHttpClient {
     Duration? receiveTimeout,
     int retryCount = 0,
   }) async {
-    var a = 0;
     return await _sendRequest(
       _dio.post(
         urlWithParams(query, urlParameters),
@@ -157,14 +156,12 @@ class _HttpClient implements BaseHttpClient {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          // if (AuthCubit.accessToken != null) {
-          //   options.headers["Authorization"] =
-          //       "Bearer ${AuthCubit.accessToken!}";
-          // }
-          // print('body ${options.data}');
-          // options.headers["contentType"] = 'application/json';
-          // options.headers["X-Otbasybank-Resource"] = '5';
-          //'Accept-Language': 'ru-RU', //'kk-KZ'
+          if (AuthCubit.accessToken != null) {
+            options.headers["Authorization"] =
+                "Bearer ${AuthCubit.accessToken!}";
+          }
+          print('body ${options.data}');
+          options.headers["contentType"] = 'application/json';
 
           return handler.next(options);
         },

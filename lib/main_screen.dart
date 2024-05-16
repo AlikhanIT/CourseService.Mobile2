@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'models/lesson.dart';
 import 'screens/course_screen.dart';
 import 'screens/profile_screen.dart';
-import 'models/user.dart';
 import 'models/course.dart';
 List<Course> allCourses = [
   Course(
@@ -87,7 +86,7 @@ class _MainScreenState extends State<MainScreen> {
     _widgetOptions = [
       CourseScreen(courses: allCourses),
       CourseScreen(courses: myCourses),
-      const LoginScreen(),
+      const ProfileScreen(),
     ];
   }
 

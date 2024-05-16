@@ -3,6 +3,7 @@ class Endpoints {
   static const login = '/api/User/authenticate';
   static const refresh = '/api/User/authenticate';
   static const validate = '/api/User/authenticate';
+  static const userInfo = '/api/User/info';
 
   static const testRoute = '/api/Courses/test-route';
   static const countries = '/api/Courses/countries';
@@ -11,5 +12,5 @@ class Endpoints {
   static const createCourse = '/api/Courses/create-course/{courseName}';
   static const addCourse = '/api/Courses/add-course/{userId}/{courseId}';
   static const userCourses = '/api/Courses/user-course/{userId}';
-  static const courseDetailes = '/api/Courses/course-details/{id}';
+  static const courseDetails = '/api/Courses/course-details/{id}';
 }
