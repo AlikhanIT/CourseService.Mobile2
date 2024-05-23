@@ -5,7 +5,7 @@ import '../../core/services/http_client/http_client_base.dart';
 
 @singleton
 class ApiProvider {
-  static const url = 'http://192.168.0.10:5001';
+  static const url = 'http://10.0.2.2:5001';
 
   BaseHttpClient httpClient = MHttpClient(baseUrl: url);
 }
