@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../data/bg_data.dart';
 import '../util/text_util.dart';
-import 'authorization/animations.dart';
+
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -21,13 +21,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late final TextEditingController passwordController;
   late final TextEditingController repeatPasswordController;
 
-  int selectedIndex=0;
-  bool showOption=false;
+  int selectedIndex = 0;
+  bool showOption = false;
   late AuthCubit authCubit;
   late UserModel user;
   bool userAuthorized = false;
   bool isRegisterPage = false;
   late Result<UserModel?> userResult;
+  bool isLoading = false;
 
   @override
   void initState() {
@@ -65,7 +66,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return userAuthorized ? Scaffold(
+    return userAuthorized
+        ? Scaffold(
       body: Card(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(15.0),
@@ -166,80 +168,89 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             GestureDetector(
-              child: const Padding(padding: EdgeInsets.only(left: 10),
-                  child: Text("Выйти"),
+              child: const Padding(
+                padding: EdgeInsets.only(left: 10),
+                child: Text("Выйти"),
               ),
               onTap: () async {
                 await context.read<AuthCubit>().logout();
                 setState(() {
                   userAuthorized = false;
                 });
-              }),
+              },
+            ),
           ],
         ),
       ),
     )
-        :
-    Scaffold(
+        : Scaffold(
       floatingActionButton: Container(
-        margin:const  EdgeInsets.symmetric(vertical: 10),
+        margin: const EdgeInsets.symmetric(vertical: 10),
         height: 49,
         width: double.infinity,
-
         child: Row(
           children: [
             Expanded(
-                child:showOption? ShowUpAnimation(
-                  delay: 100,
-                  child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: bgList.length,
-                      scrollDirection: Axis.horizontal,
-                      itemBuilder: (context,index){
-                        return   GestureDetector(
-                          onTap: (){
-                            setState(() {
-                              selectedIndex=index;
-                            });
-                          },
-                          child: CircleAvatar(
-                            radius: 30,
-
-                            backgroundColor:selectedIndex==index? Colors.white:Colors.transparent,
-                            child: Padding(
-                              padding:const  EdgeInsets.all(1),
-                              child: CircleAvatar(
-                                radius: 30,
-                                backgroundImage: AssetImage(bgList[index],),
+                child: showOption
+                    ? ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: bgList.length,
+                    scrollDirection: Axis.horizontal,
+                    itemBuilder: (context, index) {
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            selectedIndex = index;
+                          });
+                        },
+                        child: CircleAvatar(
+                          radius: 30,
+                          backgroundColor: selectedIndex == index
+                              ? Colors.white
+                              : Colors.transparent,
+                          child: Padding(
+                            padding: const EdgeInsets.all(1),
+                            child: CircleAvatar(
+                              radius: 30,
+                              backgroundImage: AssetImage(
+                                bgList[index],
                               ),
                             ),
                           ),
-                        );
-
-                      }),
-                ):const SizedBox()),
-            const  SizedBox(width: 20,),
-            showOption? GestureDetector(
-                onTap: (){
+                        ),
+                      );
+                    })
+                    : const SizedBox()),
+            const SizedBox(
+              width: 20,
+            ),
+            showOption
+                ? GestureDetector(
+                onTap: () {
                   setState(() {
-                    showOption=false;
+                    showOption = false;
                   });
                 },
-                child:const  Icon(Icons.close,color: Colors.white,size: 30,)) :
-            GestureDetector(
-              onTap: (){
+                child: const Icon(
+                  Icons.close,
+                  color: Colors.white,
+                  size: 30,
+                ))
+                : GestureDetector(
+              onTap: () {
                 setState(() {
-                  showOption=true;
+                  showOption = true;
                 });
               },
               child: CircleAvatar(
-
                 backgroundColor: Colors.white,
                 child: Padding(
-                  padding:const  EdgeInsets.all(1),
+                  padding: const EdgeInsets.all(1),
                   child: CircleAvatar(
                     radius: 30,
-                    backgroundImage: AssetImage(bgList[selectedIndex],),
+                    backgroundImage: AssetImage(
+                      bgList[selectedIndex],
+                    ),
                   ),
                 ),
               ),
@@ -250,14 +261,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: Container(
         height: double.infinity,
         width: double.infinity,
-        decoration:  BoxDecoration(
+        decoration: BoxDecoration(
           image: DecorationImage(
-              image: AssetImage(bgList[selectedIndex]),fit: BoxFit.fill
-          ),
-
+              image: AssetImage(bgList[selectedIndex]), fit: BoxFit.fill),
         ),
         alignment: Alignment.center,
-        child: Container(
+        child: isLoading
+            ? CircularProgressIndicator()
+            : Container(
           height: 400,
           width: double.infinity,
           margin: const EdgeInsets.symmetric(horizontal: 30),
@@ -265,135 +276,209 @@ class _ProfileScreenState extends State<ProfileScreen> {
             border: Border.all(color: Colors.white),
             borderRadius: BorderRadius.circular(15),
             color: Colors.black.withOpacity(0.1),
-
-
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(20),
-            child: BackdropFilter(filter:ImageFilter.blur(sigmaY: 5,sigmaX: 5),
-                child:Padding(
-                  padding: const EdgeInsets.all(25),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const   Spacer(),
-                      isRegisterPage ?
-                      Center(child: TextUtil(text: "Регистрация",weight: true,size: 30,))
-                          : Center(child: TextUtil(text: "Авторизация",weight: true,size: 30,)),
-                      const Spacer(),
-                      TextUtil(text: "Имя пользователя",),
-                      Container(
-                        height: 35,
-                        decoration:const  BoxDecoration(
-                            border: Border(bottom: BorderSide(color: Colors.white))
-                        ),
-                        child:TextFormField(
-                          style: const TextStyle(color: Colors.white),
-                          decoration:const  InputDecoration(
-                            suffixIcon: Icon(Icons.mail,color: Colors.white,),
-                            fillColor: Colors.white,
-                            border: InputBorder.none,),
-                          controller: usernameController,
-                        ),
-                      ),
-                      isRegisterPage ? TextUtil(text: "E-Mail", ) : Container(),
-                      isRegisterPage ? Container(
-                        height: 35,
-                        decoration:const  BoxDecoration(
-                            border: Border(bottom: BorderSide(color: Colors.white))
-                        ),
-                        child:TextFormField(
-                          style: const TextStyle(color: Colors.white),
-                          decoration:const  InputDecoration(
-                            suffixIcon: Icon(Icons.lock,color: Colors.white,),
-                            fillColor: Colors.white,
-                            border: InputBorder.none,),
-                          controller: emailController,
-                        ),
-                      ) : Container(),
-                      const   Spacer(),
-                      TextUtil(text: "Пароль", ),
-                      Container(
-                        height: 35,
-                        decoration:const  BoxDecoration(
-                            border: Border(bottom: BorderSide(color: Colors.white))
-                        ),
-                        child:TextFormField(
-                          style: const TextStyle(color: Colors.white),
-                          decoration:const  InputDecoration(
-                            suffixIcon: Icon(Icons.lock,color: Colors.white,),
-                            fillColor: Colors.white,
-                            border: InputBorder.none,),
-                          controller: passwordController,
-                        ),
-                      ),
-                      isRegisterPage ? TextUtil(text: "Повторный пароль", ) : Container(),
-                      isRegisterPage ?
-                      Container(
-                          height: 35,
-                          decoration:const  BoxDecoration(
-                              border: Border(bottom: BorderSide(color: Colors.white))
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaY: 5, sigmaX: 5),
+              child: Padding(
+                padding: const EdgeInsets.all(25),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Spacer(),
+                    isRegisterPage
+                        ? Center(
+                        child: TextUtil(
+                          text: "Регистрация",
+                          weight: true,
+                          size: 30,
+                        ))
+                        : Center(
+                        child: TextUtil(
+                          text: "Авторизация",
+                          weight: true,
+                          size: 30,
+                        )),
+                    const Spacer(),
+                    TextUtil(
+                      text: "Имя пользователя",
+                    ),
+                    Container(
+                      height: 35,
+                      decoration: const BoxDecoration(
+                          border: Border(
+                              bottom: BorderSide(
+                                  color: Colors.white))),
+                      child: TextFormField(
+                        style: const TextStyle(color: Colors.white),
+                        decoration: const InputDecoration(
+                          suffixIcon: Icon(
+                            Icons.mail,
+                            color: Colors.white,
                           ),
-                          child:TextFormField(
-                            style: const TextStyle(color: Colors.white),
-                            decoration:const  InputDecoration(
-                              suffixIcon: Icon(Icons.lock,color: Colors.white,),
-                              fillColor: Colors.white,
-                              border: InputBorder.none,),
-                            controller: repeatPasswordController,
-                          )) : Container(),
-                      const   Spacer(),
-                      GestureDetector(
-                          onTap: () async {
-                            if (isRegisterPage) {
-                              if (passwordController.text == repeatPasswordController.text) {
-                                await context.read<AuthCubit>().register(username: usernameController.text, password: passwordController.text);
-                                var then = await context.read<AuthCubit>().getUserInfo();
-                                if (then.isSuccess){
-                                  setState(() {
-                                    user = then.data!;
-                                    userAuthorized = true;
-                                  });
-                                }
-                              }
-                            }
-                            else {
-                              var auth = await context.read<AuthCubit>().login(
-                                  username: usernameController.text,
-                                  password: passwordController.text);
-                              var data = await context.read<AuthCubit>().getUserInfo();
-                              if (data.isSuccess){
+                          fillColor: Colors.white,
+                          border: InputBorder.none,
+                        ),
+                        controller: usernameController,
+                      ),
+                    ),
+                    isRegisterPage
+                        ? TextUtil(
+                      text: "E-Mail",
+                    )
+                        : Container(),
+                    isRegisterPage
+                        ? Container(
+                      height: 35,
+                      decoration: const BoxDecoration(
+                          border: Border(
+                              bottom: BorderSide(
+                                  color: Colors.white))),
+                      child: TextFormField(
+                        style: const TextStyle(
+                            color: Colors.white),
+                        decoration: const InputDecoration(
+                          suffixIcon: Icon(
+                            Icons.lock,
+                            color: Colors.white,
+                          ),
+                          fillColor: Colors.white,
+                          border: InputBorder.none,
+                        ),
+                        controller: emailController,
+                      ),
+                    )
+                        : Container(),
+                    const Spacer(),
+                    TextUtil(
+                      text: "Пароль",
+                    ),
+                    Container(
+                      height: 35,
+                      decoration: const BoxDecoration(
+                          border: Border(
+                              bottom: BorderSide(
+                                  color: Colors.white))),
+                      child: TextFormField(
+                        style: const TextStyle(color: Colors.white),
+                        decoration: const InputDecoration(
+                          suffixIcon: Icon(
+                            Icons.lock,
+                            color: Colors.white,
+                          ),
+                          fillColor: Colors.white,
+                          border: InputBorder.none,
+                        ),
+                        controller: passwordController,
+                      ),
+                    ),
+                    isRegisterPage
+                        ? TextUtil(
+                      text: "Повторный пароль",
+                    )
+                        : Container(),
+                    isRegisterPage
+                        ? Container(
+                        height: 35,
+                        decoration: const BoxDecoration(
+                            border: Border(
+                                bottom: BorderSide(
+                                    color: Colors.white))),
+                        child: TextFormField(
+                          style: const TextStyle(
+                              color: Colors.white),
+                          decoration: const InputDecoration(
+                            suffixIcon: Icon(
+                              Icons.lock,
+                              color: Colors.white,
+                            ),
+                            fillColor: Colors.white,
+                            border: InputBorder.none,
+                          ),
+                          controller: repeatPasswordController,
+                        ))
+                        : Container(),
+                    const Spacer(),
+                    GestureDetector(
+                        onTap: () async {
+                          setState(() {
+                            isLoading = true;
+                          });
+                          if (isRegisterPage) {
+                            if (passwordController.text ==
+                                repeatPasswordController.text) {
+                              await context
+                                  .read<AuthCubit>()
+                                  .register(
+                                  username:
+                                  usernameController.text,
+                                  password:
+                                  passwordController.text);
+                              var then = await context
+                                  .read<AuthCubit>()
+                                  .getUserInfo();
+                              if (then.isSuccess) {
                                 setState(() {
-                                  user = data.data!;
+                                  user = then.data!;
                                   userAuthorized = true;
                                 });
                               }
                             }
-                          },
-                          child:
-                          Container(
-                            height: 40,
-                            width: double.infinity,
-                            decoration:  BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(30)
-                            ),
-                            alignment: Alignment.center,
-                            child: TextUtil(text: "Войти",color: Colors.black),
-                          )),
-                      const   Spacer(),
-                      GestureDetector(
-                          child: Center(child: TextUtil(text: !isRegisterPage ? "Регистрация" : "Авторизация",size: 12,weight: true,)),
-                          onTap: () {
-                            setState(() {
-                              isRegisterPage = !isRegisterPage;
-                            });
+                          } else {
+                            var auth = await context
+                                .read<AuthCubit>()
+                                .login(
+                                username:
+                                usernameController.text,
+                                password:
+                                passwordController.text);
+                            var data = await context
+                                .read<AuthCubit>()
+                                .getUserInfo();
+                            if (data.isSuccess) {
+                              setState(() {
+                                user = data.data!;
+                                userAuthorized = true;
+                              });
+                            }
                           }
-                      ),
-                      const   Spacer(),
-                    ],
-                  ),
-                ) ),
+                          setState(() {
+                            isLoading = false;
+                          });
+                        },
+                        child: Container(
+                          height: 40,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius:
+                              BorderRadius.circular(30)),
+                          alignment: Alignment.center,
+                          child: TextUtil(
+                              text: "Войти",
+                              color: Colors.black),
+                        )),
+                    const Spacer(),
+                    GestureDetector(
+                        child: Center(
+                            child: TextUtil(
+                              text: !isRegisterPage
+                                  ? "Регистрация"
+                                  : "Авторизация",
+                              size: 12,
+                              weight: true,
+                            )),
+                        onTap: () {
+                          setState(() {
+                            isRegisterPage = !isRegisterPage;
+                          });
+                        }),
+                    const Spacer(),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),

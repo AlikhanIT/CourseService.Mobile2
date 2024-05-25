@@ -1,3 +1,5 @@
+
+// Обновленный AuthCubit с управлением состоянием загрузки
 import 'package:bloc/bloc.dart';
 import 'package:diploma/core/services/secure_storage/secure_storage.dart';
 import 'package:diploma/data/api/auth_api.dart';
@@ -7,7 +9,6 @@ import 'package:injectable/injectable.dart';
 import 'package:flutter/material.dart';
 
 part 'auth_state.dart';
-
 
 @singleton
 class AuthCubit extends Cubit<AuthState> {
@@ -20,36 +21,44 @@ class AuthCubit extends Cubit<AuthState> {
   register({required String username, required String password}) async {
     try {
       emit(AuthLoading());
-
       final loginResponseModel =
-       await api.register(username: username, password: password);
+      await api.register(username: username, password: password);
 
       if (loginResponseModel.isSuccess &&
-          loginResponseModel.data?.accessToken != null && loginResponseModel.data?.refreshToken != null) {
-        await storage.write("access_token", loginResponseModel.data!.accessToken!);
-        await storage.write("access_token", loginResponseModel.data!.refreshToken!);
+          loginResponseModel.data?.accessToken != null &&
+          loginResponseModel.data?.refreshToken != null) {
+        await storage.write(
+            "access_token", loginResponseModel.data!.accessToken!);
+        await storage.write(
+            "access_token", loginResponseModel.data!.refreshToken!);
         getUserInfo();
       }
     } catch (e) {
       // rethrow;
+    } finally {
+      emit(AuthInitial());
     }
   }
 
   login({required String username, required String password}) async {
     try {
       emit(AuthLoading());
-
       final loginResponseModel =
-          await api.login(username: username, password: password);
+      await api.login(username: username, password: password);
       if (loginResponseModel.isSuccess &&
-          loginResponseModel.data?.accessToken != null && loginResponseModel.data?.refreshToken != null) {
+          loginResponseModel.data?.accessToken != null &&
+          loginResponseModel.data?.refreshToken != null) {
         accessToken = loginResponseModel.data!.accessToken!;
-        await storage.write("access_token", loginResponseModel.data!.accessToken!);
-        await storage.write("access_token", loginResponseModel.data!.refreshToken!);
+        await storage.write(
+            "access_token", loginResponseModel.data!.accessToken!);
+        await storage.write(
+            "access_token", loginResponseModel.data!.refreshToken!);
         getUserInfo();
       }
     } catch (e) {
       // rethrow;
+    } finally {
+      emit(AuthInitial());
     }
   }
 
@@ -64,6 +73,5 @@ class AuthCubit extends Cubit<AuthState> {
   Future logout() async {
     await storage.remove("access_token");
   }
-  Future
-  doNothing() async {}
+  Future doNothing() async {}
 }

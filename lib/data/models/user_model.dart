@@ -6,7 +6,16 @@ class UserModel{
   String? email;
   String username;
   String id;
-  UserModel({this.email, required this.username, required this.id});
+  final String avatarUrl;
+  final String backgroundUrl;
+
+  UserModel({
+    required this.username,
+    required this.email,
+    this.avatarUrl = 'https://via.placeholder.com/150',
+    this.backgroundUrl = 'https://via.placeholder.com/800x400',
+    required this.id
+  });
 
   factory UserModel.fromJson(Map<String, dynamic> json) => _$UserModelFromJson(json);
 
