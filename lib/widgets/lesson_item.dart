@@ -1,11 +1,25 @@
 import 'package:flutter/material.dart';
 import '../models/lesson.dart';
+import '../models/content_item.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import '../screens/lesson_detail_screen.dart';
 
 class LessonItem extends StatelessWidget {
   final Lesson lesson;
 
   LessonItem({required this.lesson});
+
+  Future<List<ContentItem>> fetchContentItems(String lessonId) async {
+    final response = await http.get(Uri.parse('http://10.0.2.2:5001/api/Courses/GetAllContentItems/$lessonId'));
+
+    if (response.statusCode == 200) {
+      final List<dynamic> contentJson = json.decode(response.body);
+      return contentJson.map((json) => ContentItem.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load content items');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,14 +39,21 @@ class LessonItem extends StatelessWidget {
             ? Text(lesson.description)
             : Text('Без описания'),
         trailing: Icon(Icons.arrow_forward_ios),
-        onTap: () {
-          // Navigate to the lesson detail screen
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => LessonDetailScreen(lesson: lesson),
-            ),
-          );
+        onTap: () async {
+          try {
+            final contentItems = await fetchContentItems(lesson.lessonId);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => LessonDetailScreen(lesson: lesson, contentItems: contentItems),
+              ),
+            );
+          } catch (e) {
+            print('Failed to load content items: $e');
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Failed to load content items')),
+            );
+          }
         },
       ),
     );
