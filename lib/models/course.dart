@@ -5,7 +5,7 @@ class Course {
   final String title;
   final String description;
   final String imageUrl;
-  List<Lesson> lessons;
+  final List<Lesson> lessons;
 
   Course({
     required this.id,
@@ -14,4 +14,15 @@ class Course {
     required this.imageUrl,
     required this.lessons,
   });
+
+  factory Course.fromJson(Map<String, dynamic> json) {
+    return Course(
+      id: json['courseId'],
+      title: json['courseName'],
+      description: json['description'],
+      imageUrl: 'https://picsum.photos/500/300', // Подставляем заглушку для URL изображения
+      lessons: [], // Вы можете адаптировать это для включения уроков
+    );
+  }
 }
+

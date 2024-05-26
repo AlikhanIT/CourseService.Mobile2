@@ -1,5 +1,4 @@
 import 'dart:ui';
-
 import 'package:diploma/data/models/user_model.dart';
 import 'package:diploma/models/result.dart';
 import 'package:diploma/presentations/auth/auth_cubit.dart';
@@ -16,6 +15,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  final _formKey = GlobalKey<FormState>();
   late final TextEditingController usernameController;
   late final TextEditingController emailController;
   late final TextEditingController passwordController;
@@ -24,10 +24,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   int selectedIndex = 0;
   bool showOption = false;
   late AuthCubit authCubit;
-  late UserModel user;
+  UserModel? user;
   bool userAuthorized = false;
   bool isRegisterPage = false;
-  late Result<UserModel?> userResult;
+  Result<UserModel?>? userResult;
   bool isLoading = false;
 
   @override
@@ -42,16 +42,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> getUserInfo() async {
     userResult = await context.read<AuthCubit>().getUserInfo();
-    if (userResult.isSuccess) {
+    if (userResult != null && userResult!.isSuccess) {
       setState(() {
-        user = userResult.data!;
+        user = userResult!.data;
         userAuthorized = true;
       });
     } else {
       setState(() {
         userAuthorized = false;
       });
-      print('Error: ${userResult.errorMessage}');
+      print('Error: ${userResult?.errorMessage}');
     }
   }
 
@@ -64,126 +64,150 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.dispose();
   }
 
+  String? validateEmail(String? value) {
+    const pattern =
+        r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$';
+    final regExp = RegExp(pattern);
+
+    if (value == null || value.isEmpty) {
+      return 'Введите E-Mail';
+    } else if (!regExp.hasMatch(value)) {
+      return 'Введите корректный E-Mail';
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return userAuthorized
-        ? Scaffold(
-      body: Card(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15.0),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              height: MediaQuery.of(context).size.height * .5,
-              child: Stack(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 40.0),
-                    child: Container(
-                      height: MediaQuery.of(context).size.height,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.only(
-                          bottomLeft: Radius.elliptical(
-                              MediaQuery.of(context).size.width * 0.5, 100.0),
-                          bottomRight: Radius.elliptical(
-                              MediaQuery.of(context).size.width * 0.5, 100.0),
-                        ),
-                        image: const DecorationImage(
-                          fit: BoxFit.cover,
-                          image: NetworkImage(
-                              'https://i.pinimg.com/564x/1e/7f/85/1e7f85e354e1a11b4a439ac9d9f7e283.jpg'),
-                        ),
+    return Scaffold(
+      body: userAuthorized
+          ? user != null
+          ? buildUserProfile()
+          : Center(child: CircularProgressIndicator())
+          : buildAuthForm(),
+    );
+  }
+
+  Widget buildUserProfile() {
+    return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15.0),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            height: MediaQuery.of(context).size.height * .5,
+            child: Stack(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 40.0),
+                  child: Container(
+                    height: MediaQuery.of(context).size.height,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.elliptical(
+                            MediaQuery.of(context).size.width * 0.5, 100.0),
+                        bottomRight: Radius.elliptical(
+                            MediaQuery.of(context).size.width * 0.5, 100.0),
+                      ),
+                      image: const DecorationImage(
+                        fit: BoxFit.cover,
+                        image: NetworkImage(
+                            'https://i.pinimg.com/564x/1e/7f/85/1e7f85e354e1a11b4a439ac9d9f7e283.jpg'),
                       ),
                     ),
                   ),
-                  Align(
-                    alignment: Alignment.topCenter,
-                    child: Stack(
-                      children: [
-                        const Padding(
-                          padding: EdgeInsets.only(left: 10, top: 10),
-                          child: Icon(
-                            Icons.close,
-                            color: Color(0xffC3C3C3),
-                          ),
+                ),
+                Align(
+                  alignment: Alignment.topCenter,
+                  child: Stack(
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.only(left: 10, top: 10),
+                        child: Icon(
+                          Icons.close,
+                          color: Color(0xffC3C3C3),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 10, top: 40),
-                          child: Align(
-                            alignment: Alignment.topCenter,
-                            child: Text(
-                              user.username,
-                              style: const TextStyle(
-                                color: Color(0xffBDBDBD),
-                                fontSize: 35,
-                              ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 10, top: 40),
+                        child: Align(
+                          alignment: Alignment.topCenter,
+                          child: Text(
+                            user!.username,
+                            style: const TextStyle(
+                              color: Color(0xffBDBDBD),
+                              fontSize: 35,
                             ),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  const Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        CircleAvatar(
-                          radius: 30,
-                          backgroundColor: Color(0xffD8D8D8),
-                          child: Icon(
-                            Icons.chat,
-                            size: 30,
-                            color: Color(0xff6E6E6E),
-                          ),
+                ),
+                const Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      CircleAvatar(
+                        radius: 30,
+                        backgroundColor: Color(0xffD8D8D8),
+                        child: Icon(
+                          Icons.chat,
+                          size: 30,
+                          color: Color(0xff6E6E6E),
                         ),
-                        CircleAvatar(
-                          radius: 70,
-                          backgroundImage: NetworkImage(
-                              'https://i.pinimg.com/564x/1e/7f/85/1e7f85e354e1a11b4a439ac9d9f7e283.jpg'),
+                      ),
+                      CircleAvatar(
+                        radius: 70,
+                        backgroundImage: NetworkImage(
+                            'https://i.pinimg.com/564x/1e/7f/85/1e7f85e354e1a11b4a439ac9d9f7e283.jpg'),
+                      ),
+                      CircleAvatar(
+                        radius: 30,
+                        backgroundColor: Color(0xffD8D8D8),
+                        child: Icon(
+                          Icons.call,
+                          size: 30,
+                          color: Color(0xff6E6E6E),
                         ),
-                        CircleAvatar(
-                          radius: 30,
-                          backgroundColor: Color(0xffD8D8D8),
-                          child: Icon(
-                            Icons.call,
-                            size: 30,
-                            color: Color(0xff6E6E6E),
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            Padding(
-              padding: EdgeInsets.only(left: 10, right: 10, top: 10),
-              child: Text(
-                user.email!,
-                style: TextStyle(fontSize: 15),
-              ),
+          ),
+          Padding(
+            padding: EdgeInsets.only(left: 10, right: 10, top: 10),
+            child: Text(
+              user!.email!,
+              style: TextStyle(fontSize: 15),
             ),
-            GestureDetector(
-              child: const Padding(
-                padding: EdgeInsets.only(left: 10),
-                child: Text("Выйти"),
-              ),
-              onTap: () async {
-                await context.read<AuthCubit>().logout();
-                setState(() {
-                  userAuthorized = false;
-                });
-              },
+          ),
+          GestureDetector(
+            child: const Padding(
+              padding: EdgeInsets.only(left: 10),
+              child: Text("Выйти"),
             ),
-          ],
-        ),
+            onTap: () async {
+              await context.read<AuthCubit>().logout();
+              setState(() {
+                userAuthorized = false;
+                user = null; // Reset the user on logout
+              });
+            },
+          ),
+        ],
       ),
-    )
-        : Scaffold(
+    );
+  }
+
+  Widget buildAuthForm() {
+    return Scaffold(
       floatingActionButton: Container(
         margin: const EdgeInsets.symmetric(vertical: 10),
         height: 49,
@@ -283,199 +307,253 @@ class _ProfileScreenState extends State<ProfileScreen> {
               filter: ImageFilter.blur(sigmaY: 5, sigmaX: 5),
               child: Padding(
                 padding: const EdgeInsets.all(25),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Spacer(),
-                    isRegisterPage
-                        ? Center(
-                        child: TextUtil(
-                          text: "Регистрация",
-                          weight: true,
-                          size: 30,
-                        ))
-                        : Center(
-                        child: TextUtil(
-                          text: "Авторизация",
-                          weight: true,
-                          size: 30,
-                        )),
-                    const Spacer(),
-                    TextUtil(
-                      text: "Имя пользователя",
-                    ),
-                    Container(
-                      height: 35,
-                      decoration: const BoxDecoration(
-                          border: Border(
-                              bottom: BorderSide(
-                                  color: Colors.white))),
-                      child: TextFormField(
-                        style: const TextStyle(color: Colors.white),
-                        decoration: const InputDecoration(
-                          suffixIcon: Icon(
-                            Icons.mail,
-                            color: Colors.white,
+                child: SingleChildScrollView(
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(
+                          child: TextUtil(
+                            text: isRegisterPage ? "Регистрация" : "Авторизация",
+                            weight: true,
+                            size: 30,
                           ),
-                          fillColor: Colors.white,
-                          border: InputBorder.none,
                         ),
-                        controller: usernameController,
-                      ),
-                    ),
-                    isRegisterPage
-                        ? TextUtil(
-                      text: "E-Mail",
-                    )
-                        : Container(),
-                    isRegisterPage
-                        ? Container(
-                      height: 35,
-                      decoration: const BoxDecoration(
-                          border: Border(
-                              bottom: BorderSide(
-                                  color: Colors.white))),
-                      child: TextFormField(
-                        style: const TextStyle(
-                            color: Colors.white),
-                        decoration: const InputDecoration(
-                          suffixIcon: Icon(
-                            Icons.lock,
-                            color: Colors.white,
-                          ),
-                          fillColor: Colors.white,
-                          border: InputBorder.none,
+                        const SizedBox(height: 20),
+                        TextUtil(
+                          text: "Имя пользователя",
                         ),
-                        controller: emailController,
-                      ),
-                    )
-                        : Container(),
-                    const Spacer(),
-                    TextUtil(
-                      text: "Пароль",
-                    ),
-                    Container(
-                      height: 35,
-                      decoration: const BoxDecoration(
-                          border: Border(
-                              bottom: BorderSide(
-                                  color: Colors.white))),
-                      child: TextFormField(
-                        style: const TextStyle(color: Colors.white),
-                        decoration: const InputDecoration(
-                          suffixIcon: Icon(
-                            Icons.lock,
-                            color: Colors.white,
-                          ),
-                          fillColor: Colors.white,
-                          border: InputBorder.none,
-                        ),
-                        controller: passwordController,
-                      ),
-                    ),
-                    isRegisterPage
-                        ? TextUtil(
-                      text: "Повторный пароль",
-                    )
-                        : Container(),
-                    isRegisterPage
-                        ? Container(
-                        height: 35,
-                        decoration: const BoxDecoration(
+                        Container(
+                          height: 35,
+                          decoration: const BoxDecoration(
                             border: Border(
-                                bottom: BorderSide(
-                                    color: Colors.white))),
-                        child: TextFormField(
-                          style: const TextStyle(
-                              color: Colors.white),
-                          decoration: const InputDecoration(
-                            suffixIcon: Icon(
-                              Icons.lock,
-                              color: Colors.white,
+                              bottom: BorderSide(color: Colors.white),
                             ),
-                            fillColor: Colors.white,
-                            border: InputBorder.none,
                           ),
-                          controller: repeatPasswordController,
-                        ))
-                        : Container(),
-                    const Spacer(),
-                    GestureDetector(
-                        onTap: () async {
-                          setState(() {
-                            isLoading = true;
-                          });
-                          if (isRegisterPage) {
-                            if (passwordController.text ==
-                                repeatPasswordController.text) {
-                              await context
-                                  .read<AuthCubit>()
-                                  .register(
-                                  username:
-                                  usernameController.text,
-                                  password:
-                                  passwordController.text);
-                              var then = await context
-                                  .read<AuthCubit>()
-                                  .getUserInfo();
-                              if (then.isSuccess) {
+                          child: TextFormField(
+                            controller: usernameController,
+                            style: const TextStyle(
+                                fontSize: 15, color: Colors.white),
+                            decoration: InputDecoration(
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 5),
+                              hintText: "Имя пользователя",
+                              hintStyle: TextStyle(
+                                color: Colors.white.withOpacity(0.5),
+                              ),
+                              border: InputBorder.none,
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Введите имя пользователя';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        TextUtil(
+                          text: "Пароль",
+                        ),
+                        Container(
+                          height: 35,
+                          decoration: const BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(color: Colors.white),
+                            ),
+                          ),
+                          child: TextFormField(
+                            controller: passwordController,
+                            style: const TextStyle(
+                                fontSize: 15, color: Colors.white),
+                            decoration: InputDecoration(
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 5),
+                              hintText: "Пароль",
+                              hintStyle: TextStyle(
+                                color: Colors.white.withOpacity(0.5),
+                              ),
+                              border: InputBorder.none,
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Введите пароль';
+                              }
+                              return null;
+                            },
+                            obscureText: true,
+                          ),
+                        ),
+                        if (isRegisterPage) ...[
+                          const SizedBox(height: 20),
+                          TextUtil(
+                            text: "Повторите пароль",
+                          ),
+                          Container(
+                            height: 35,
+                            decoration: const BoxDecoration(
+                              border: Border(
+                                bottom: BorderSide(color: Colors.white),
+                              ),
+                            ),
+                            child: TextFormField(
+                              controller: repeatPasswordController,
+                              style: const TextStyle(
+                                  fontSize: 15, color: Colors.white),
+                              decoration: InputDecoration(
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 5),
+                                hintText: "Повторите пароль",
+                                hintStyle: TextStyle(
+                                  color: Colors.white.withOpacity(0.5),
+                                ),
+                                border: InputBorder.none,
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Повторите пароль';
+                                } else if (value !=
+                                    passwordController.text) {
+                                  return 'Пароли не совпадают';
+                                }
+                                return null;
+                              },
+                              obscureText: true,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          TextUtil(
+                            text: "E-Mail",
+                          ),
+                          Container(
+                            height: 35,
+                            decoration: const BoxDecoration(
+                              border: Border(
+                                bottom: BorderSide(color: Colors.white),
+                              ),
+                            ),
+                            child: TextFormField(
+                              controller: emailController,
+                              style: const TextStyle(
+                                  fontSize: 15, color: Colors.white),
+                              decoration: InputDecoration(
+                                contentPadding:
+                                const EdgeInsets.symmetric(
+                                    horizontal: 5),
+                                hintText: "E-Mail",
+                                hintStyle: TextStyle(
+                                  color:
+                                  Colors.white.withOpacity(0.5),
+                                ),
+                                border: InputBorder.none,
+                              ),
+                              validator: validateEmail,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 20),
+                        Center(
+                          child: GestureDetector(
+                            onTap: () async {
+                              if (_formKey.currentState!.validate()) {
                                 setState(() {
-                                  user = then.data!;
-                                  userAuthorized = true;
+                                  isLoading = true;
+                                });
+
+                                if (isRegisterPage) {
+                                  final result = await context
+                                      .read<AuthCubit>()
+                                      .register(
+                                    username: usernameController.text,
+                                    email: emailController.text,
+                                    password: passwordController.text,
+                                  );
+
+                                  if (result.isSuccess) {
+                                    print('Успешная регистрация');
+                                    final data = await context
+                                        .read<AuthCubit>()
+                                        .getUserInfo();
+                                    if (data.isSuccess) {
+                                      setState(() {
+                                        user = data.data;
+                                        userAuthorized = true;
+                                      });
+                                    }
+                                  } else {
+                                    print(
+                                        'Ошибка регистрации: ${result.errorMessage}');
+                                  }
+                                } else {
+                                  final result = await context
+                                      .read<AuthCubit>()
+                                      .login(
+                                    username: usernameController.text,
+                                    password: passwordController.text,
+                                  );
+
+                                  if (result.isSuccess) {
+                                    print('Успешная авторизация');
+                                    final data = await context
+                                        .read<AuthCubit>()
+                                        .getUserInfo();
+                                    if (data.isSuccess) {
+                                      setState(() {
+                                        user = data.data;
+                                        userAuthorized = true;
+                                      });
+                                    }
+                                  } else {
+                                    print(
+                                        'Ошибка авторизации: ${result.errorMessage}');
+                                  }
+                                }
+
+                                setState(() {
+                                  isLoading = false;
                                 });
                               }
-                            }
-                          } else {
-                            var auth = await context
-                                .read<AuthCubit>()
-                                .login(
-                                username:
-                                usernameController.text,
-                                password:
-                                passwordController.text);
-                            var data = await context
-                                .read<AuthCubit>()
-                                .getUserInfo();
-                            if (data.isSuccess) {
-                              setState(() {
-                                user = data.data!;
-                                userAuthorized = true;
-                              });
-                            }
-                          }
-                          setState(() {
-                            isLoading = false;
-                          });
-                        },
-                        child: Container(
-                          height: 40,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius:
-                              BorderRadius.circular(30)),
-                          alignment: Alignment.center,
-                          child: TextUtil(
-                              text: "Войти",
-                              color: Colors.black),
-                        )),
-                    const Spacer(),
-                    GestureDetector(
-                        child: Center(
-                            child: TextUtil(
-                              text: !isRegisterPage
-                                  ? "Регистрация"
-                                  : "Авторизация",
-                              size: 12,
-                              weight: true,
-                            )),
-                        onTap: () {
-                          setState(() {
-                            isRegisterPage = !isRegisterPage;
-                          });
-                        }),
-                    const Spacer(),
-                  ],
+                            },
+                            child: Container(
+                              height: 50,
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              alignment: Alignment.center,
+                              child: TextUtil(
+                                text: isRegisterPage
+                                    ? "Зарегистрироваться"
+                                    : "Войти",
+                                color: Colors.black,
+                                weight: true,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              isRegisterPage = !isRegisterPage;
+                            });
+                          },
+                          child: Center(
+                            child: Text(
+                              isRegisterPage
+                                  ? "Уже есть аккаунт? Войти"
+                                  : "Нет аккаунта? Зарегистрироваться",
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 12),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),

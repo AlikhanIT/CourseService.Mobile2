@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import '../models/course.dart';
-import '../widgets/lesson_item.dart'; // Make sure this file is correctly created and imported
+import '../models/lesson.dart';
+import '../widgets/lesson_item.dart';
 
 class CourseDetailScreen extends StatelessWidget {
   final Course course;
+  final List<Lesson> lessons;
 
-  CourseDetailScreen({required this.course});
+  CourseDetailScreen({required this.course, required this.lessons});
 
-  @override  // Corrected here
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -38,7 +40,7 @@ class CourseDetailScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
               ),
             ),
-            ...course.lessons.map((lesson) => LessonItem(lesson: lesson)).toList(),
+            ...lessons.map((lesson) => LessonItem(lesson: lesson)).toList(),
           ],
         ),
       ),

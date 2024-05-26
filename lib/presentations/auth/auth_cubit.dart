@@ -18,20 +18,25 @@ class AuthCubit extends Cubit<AuthState> {
 
   AuthCubit(this.api, this.storage) : super(AuthInitial());
 
-  register({required String username, required String password}) async {
+  register({required String username, required String email ,required String password}) async {
     try {
       emit(AuthLoading());
       final loginResponseModel =
-      await api.register(username: username, password: password);
+      await api.register(
+          username: username,
+          email: email,
+          password: password)
+      ;
 
       if (loginResponseModel.isSuccess &&
           loginResponseModel.data?.accessToken != null &&
           loginResponseModel.data?.refreshToken != null) {
+        accessToken = loginResponseModel.data!.accessToken!;
         await storage.write(
             "access_token", loginResponseModel.data!.accessToken!);
         await storage.write(
             "access_token", loginResponseModel.data!.refreshToken!);
-        getUserInfo();
+        return getUserInfo();
       }
     } catch (e) {
       // rethrow;
@@ -53,7 +58,7 @@ class AuthCubit extends Cubit<AuthState> {
             "access_token", loginResponseModel.data!.accessToken!);
         await storage.write(
             "access_token", loginResponseModel.data!.refreshToken!);
-        getUserInfo();
+        return getUserInfo();
       }
     } catch (e) {
       // rethrow;

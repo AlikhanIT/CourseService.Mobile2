@@ -30,6 +30,7 @@ class AuthApi extends ApiProvider {
 
   Future<Result<LoginResponseModel?>> register({
     required String username,
+    required String email,
     required String password
   }) async {
     try {
@@ -37,6 +38,7 @@ class AuthApi extends ApiProvider {
           query: Endpoints.register,
           data: {
             'username': username,
+            'email': email,
             'password': password,
           }
       );

@@ -1,75 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'models/lesson.dart';
+import 'package:http/http.dart' as http;
+import 'models/course.dart';
 import 'screens/course_screen.dart';
 import 'screens/profile_screen.dart';
-import 'models/course.dart';
-List<Course> allCourses = [
-  Course(
-    id: '1',
-    title: 'Flutter для начинающих',
-    description: 'Описание курса Flutter для начинающих',
-    imageUrl: 'https://picsum.photos/500/300', // Add your image URL
-    lessons: [
-      Lesson(id: 'L1', title: 'Введение в Flutter', description: 'Основы Flutter и начало работы.'),
-      Lesson(id: 'L2', title: 'Stateless Widgets', description: 'Изучение Stateless Widgets.'),
-    ],
-  ),
-  Course(
-    id: '2',
-    title: 'Продвинутый Flutter',
-    description: 'Описание продвинутого курса по Flutter',
-    imageUrl: 'https://picsum.photos/500/300',
-    lessons: [
-      Lesson(id: 'L1', title: 'Stateful Widgets', description: 'Работа со Stateful Widgets.'),
-      Lesson(id: 'L2', title: 'Управление состоянием', description: 'Методы управления состоянием в Flutter.'),
-    ],
-  ),
-  Course(
-    id: '6',
-    title: 'Flutter для начинающих',
-    description: 'Описание курса Flutter для начинающих',
-    imageUrl: 'https://picsum.photos/500/300', // Add your image URL
-    lessons: [
-      Lesson(id: 'L1', title: 'Stateful Widgets', description: 'Работа со Stateful Widgets.'),
-      Lesson(id: 'L2', title: 'Управление состоянием', description: 'Методы управления состоянием в Flutter.'),
-    ],
-  ),
-  Course(
-    id: '3',
-    title: 'Flutter для начинающих',
-    description: 'Описание курса Flutter для начинающих',
-    imageUrl: 'https://picsum.photos/500/300', // Add your image URL
-    lessons: [
-      Lesson(id: 'L1', title: 'Stateful Widgets', description: 'Работа со Stateful Widgets.'),
-      Lesson(id: 'L2', title: 'Управление состоянием', description: 'Методы управления состоянием в Flutter.'),
-    ],
-  ),
-  Course(
-    id: '4',
-    title: 'Flutter для начинающих',
-    description: 'Описание курса Flutter для начинающих',
-    imageUrl: 'https://picsum.photos/500/300', // Add your image URL
-    lessons: [
-      Lesson(id: 'L1', title: 'Stateful Widgets', description: 'Работа со Stateful Widgets.'),
-      Lesson(id: 'L2', title: 'Управление состоянием', description: 'Методы управления состоянием в Flutter.'),
-    ],
-  ),
-];
-
-List<Course> myCourses = [
-  Course(
-    id: '4',
-    title: 'Flutter для начинающих',
-    description: 'Описание курса Flutter для начинающих',
-    imageUrl: 'https://picsum.photos/500/300', // Add your image URL
-    lessons: [
-      Lesson(id: 'L1', title: 'Stateful Widgets', description: 'Работа со Stateful Widgets.'),
-      Lesson(id: 'L2', title: 'Управление состоянием', description: 'Методы управления состоянием в Flutter.'),
-    ],
-  )
-];
-
-
 
 class MainScreen extends StatefulWidget {
   @override
@@ -78,16 +12,29 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
-  late List<Widget> _widgetOptions;
+  List<Course> allCourses = [];
+  List<Course> myCourses = [];
 
   @override
   void initState() {
     super.initState();
-    _widgetOptions = [
-      CourseScreen(courses: allCourses),
-      CourseScreen(courses: myCourses),
-      const ProfileScreen(),
-    ];
+    fetchCourses();
+  }
+
+  Future<void> fetchCourses() async {
+    final response = await http.get(Uri.parse('http://10.0.2.2:5001/api/Courses/all-courses'));
+
+    if (response.statusCode == 200) {
+      final List<dynamic> courseListJson = json.decode(response.body);
+      final List<Course> courses = courseListJson.map((json) => Course.fromJson(json)).toList();
+
+      setState(() {
+        allCourses = courses;
+        // Дополнительно можно фильтровать или обрабатывать курсы для myCourses
+      });
+    } else {
+      throw Exception('Failed to load courses');
+    }
   }
 
   void _onItemTapped(int index) {
@@ -98,6 +45,12 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    List<Widget> _widgetOptions = [
+      CourseScreen(courses: allCourses),
+      CourseScreen(courses: myCourses),
+      const ProfileScreen(),
+    ];
+
     return Scaffold(
       body: IndexedStack(
         index: _selectedIndex,
