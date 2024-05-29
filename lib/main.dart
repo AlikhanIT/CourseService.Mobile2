@@ -28,13 +28,25 @@ class MyApp extends StatelessWidget {
       providers: [
         BlocProvider(create: (context) => getIt<AuthCubit>()),
       ],
-      child:
-     MaterialApp(
-      title: 'Flutter Course App',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
+      child: MaterialApp(
+        title: 'Flutter Course App',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+        ),
+        home: BlocListener<AuthCubit, AuthState>(
+          listener: (context, state) {
+            if (state is AuthError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          },
+          child: MainScreen(),
+        ),
       ),
-      home: MainScreen(),
-      ));
+    );
   }
 }

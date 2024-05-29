@@ -3,8 +3,9 @@ part 'user_model.g.dart';
 
 @JsonSerializable()
 class UserModel{
-  String? email;
+  String email;
   String username;
+  String role;
   String id;
   final String avatarUrl;
   final String backgroundUrl;
@@ -12,6 +13,7 @@ class UserModel{
   UserModel({
     required this.username,
     required this.email,
+    required this.role,
     this.avatarUrl = 'https://via.placeholder.com/150',
     this.backgroundUrl = 'https://via.placeholder.com/800x400',
     required this.id

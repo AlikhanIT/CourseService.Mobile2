@@ -14,6 +14,7 @@ class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
   List<Course> allCourses = [];
   List<Course> myCourses = [];
+  bool isUserRegistered = true; // Замените на реальную логику определения статуса пользователя
 
   @override
   void initState() {
@@ -40,14 +41,17 @@ class _MainScreenState extends State<MainScreen> {
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
+      if (index == 0 || index == 1) {
+        fetchCourses();
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
     List<Widget> _widgetOptions = [
-      CourseScreen(courses: allCourses),
-      CourseScreen(courses: myCourses),
+      CourseScreen(courses: allCourses, isUserRegistered: isUserRegistered, fetchCourses: fetchCourses),
+      CourseScreen(courses: myCourses, isUserRegistered: isUserRegistered, fetchCourses: fetchCourses),
       const ProfileScreen(),
     ];
 

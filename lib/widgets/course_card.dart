@@ -20,12 +20,13 @@ class CourseCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Image.network(
-              course.imageUrl,
-              width: MediaQuery.of(context).size.width,
-              height: 200,
-              fit: BoxFit.cover,
-            ),
+            if (course.imageUrl.isNotEmpty)
+              Image.network(
+                course.imageUrl,
+                width: MediaQuery.of(context).size.width,
+                height: 200,
+                fit: BoxFit.cover,
+              ),
             Padding(
               padding: EdgeInsets.all(16.0),
               child: Text(
