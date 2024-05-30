@@ -9,10 +9,18 @@ import 'course_detail_screen.dart';
 
 class CourseScreen extends StatelessWidget {
   final List<Course> courses;
+  final List<Course> myCourses;
   final bool isUserRegistered;
-  final Future<void> Function() fetchCourses; // Добавляем параметр fetchCourses
+  final Future<void> Function() fetchCourses;
+  final Future<void> Function() fetchMyCourses;
 
-  CourseScreen({required this.courses, required this.isUserRegistered, required this.fetchCourses});
+  CourseScreen({
+    required this.courses,
+    required this.myCourses,
+    required this.isUserRegistered,
+    required this.fetchCourses,
+    required this.fetchMyCourses,
+  });
 
   Future<List<Lesson>> fetchLessons(String courseId) async {
     final response = await http.get(Uri.parse('http://10.0.2.2:5001/api/Courses/GetAllLessons/$courseId'));
@@ -53,7 +61,8 @@ class CourseScreen extends StatelessWidget {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Курс успешно добавлен')),
                       );
-                      await fetchCourses(); // Обновить список курсов
+                      await fetchCourses();
+                      await fetchMyCourses();
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Ошибка при добавлении курса')),
@@ -104,15 +113,18 @@ class CourseScreen extends StatelessWidget {
           body: ListView.builder(
             itemCount: courses.length,
             itemBuilder: (context, index) {
+              final course = courses[index];
+              final isInMyCourses = myCourses.any((myCourse) => myCourse.id == course.id);
+
               return CourseCard(
-                course: courses[index],
+                course: course,
                 onPressed: () async {
                   try {
-                    final lessons = await fetchLessons(courses[index].id);
+                    final lessons = await fetchLessons(course.id);
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => CourseDetailScreen(course: courses[index], lessons: lessons),
+                        builder: (context) => CourseDetailScreen(course: course, lessons: lessons),
                       ),
                     );
                   } catch (e) {
@@ -122,6 +134,9 @@ class CourseScreen extends StatelessWidget {
                     );
                   }
                 },
+                isInMyCourses: isInMyCourses,
+                fetchCourses: fetchCourses,
+                fetchMyCourses: fetchMyCourses,
               );
             },
           ),

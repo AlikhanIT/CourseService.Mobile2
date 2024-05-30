@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:uuid/uuid.dart';
 import '../models/lesson.dart';
 import '../models/content_item.dart';
 import '../models/comment.dart';
@@ -17,8 +20,16 @@ class LessonDetailScreen extends StatefulWidget {
 class _LessonDetailScreenState extends State<LessonDetailScreen> {
   final List<Comment> _comments = [];
   final List<Rating> _ratings = [];
+  late List<ContentItem> _contentItems;
   final _commentController = TextEditingController();
   int _selectedStars = 0;
+  final _uuid = Uuid();
+
+  @override
+  void initState() {
+    super.initState();
+    _contentItems = widget.contentItems;
+  }
 
   @override
   void dispose() {
@@ -50,6 +61,70 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
     });
   }
 
+  Future<void> _addContentItem(String contentText) async {
+    final newContentItem = ContentItem(
+      contentItemId: _uuid.v4(),
+      contentText: contentText,
+      imageUrl: '', // Assuming no image for simplicity
+      lessonId: widget.lesson.lessonId,
+      order: _contentItems.length + 1,
+    );
+
+    final response = await http.post(
+      Uri.parse('http://10.0.2.2:5001/api/Courses/AddContentToLesson'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'lessonId': newContentItem.lessonId,
+        'contentText': newContentItem.contentText,
+        'imageUrl': newContentItem.imageUrl,
+        'order': newContentItem.order,
+      }),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      setState(() {
+        _contentItems.add(newContentItem);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Контент успешно добавлен')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ошибка при добавлении контента')),
+      );
+    }
+  }
+
+  Future<void> _showAddContentDialog(BuildContext context) async {
+    String contentText = '';
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Добавить новый контент'),
+          content: TextField(
+            decoration: InputDecoration(hintText: 'Введите текст контента'),
+            onChanged: (value) {
+              contentText = value;
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                if (contentText.isNotEmpty) {
+                  _addContentItem(contentText);
+                }
+              },
+              child: Text('Добавить'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -79,9 +154,9 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
               ListView.builder(
                 shrinkWrap: true,
                 physics: NeverScrollableScrollPhysics(),
-                itemCount: widget.contentItems.length,
+                itemCount: _contentItems.length,
                 itemBuilder: (context, index) {
-                  final contentItem = widget.contentItems[index];
+                  final contentItem = _contentItems[index];
                   return Card(
                     margin: EdgeInsets.symmetric(vertical: 8.0),
                     child: ListTile(
@@ -186,6 +261,10 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
             ],
           ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showAddContentDialog(context),
+        child: Icon(Icons.add),
       ),
     );
   }
