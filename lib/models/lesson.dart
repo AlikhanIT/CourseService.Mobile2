@@ -3,6 +3,7 @@ class Lesson {
   final String title;
   final String courseId;
   final String description;
+  final bool isDelete;
   final List<dynamic> contentItems;
 
   Lesson({
@@ -11,6 +12,7 @@ class Lesson {
     required this.courseId,
     required this.description,
     required this.contentItems,
+    this.isDelete = false,
   });
 
   factory Lesson.fromJson(Map<String, dynamic> json) {
@@ -20,6 +22,7 @@ class Lesson {
       courseId: json['courseId'],
       description: json['description'] ?? '',
       contentItems: json['contentItems'] as List<dynamic>,
+      isDelete: json['isDelete'] ?? false,
     );
   }
 }

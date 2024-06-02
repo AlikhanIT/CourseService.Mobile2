@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/course.dart';
+import '../screens/edit_course_screen.dart';
 
 class CourseCard extends StatefulWidget {
   final Course course;
@@ -58,13 +59,28 @@ class _CourseCardState extends State<CourseCard> {
       await widget.fetchMyCourses();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка при добавлении курса в избранное')),
+        SnackBar(content: Text('Ошибка при добавлении/удалении курса в избранное')),
       );
     }
   }
 
+  bool _isBase64(String str) {
+    final base64Pattern = RegExp(r'^[A-Za-z0-9+/=]+\Z');
+    return base64Pattern.hasMatch(str) && str.length % 4 == 0;
+  }
+
+  bool _isValidUrl(String url) {
+    return Uri.tryParse(url)?.hasAbsolutePath ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
+    bool isBase64Image = widget.course.imageUrl.isNotEmpty && _isBase64(widget.course.imageUrl);
+    bool isValidUrl = widget.course.imageUrl.isNotEmpty && _isValidUrl(widget.course.imageUrl);
+
+    print('isBase64Image: $isBase64Image');
+    print('isValidUrl: $isValidUrl');
+
     return GestureDetector(
       onTap: widget.onPressed,
       child: Card(
@@ -73,13 +89,31 @@ class _CourseCardState extends State<CourseCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            if (widget.course.imageUrl.isNotEmpty)
-              Image.network(
-                widget.course.imageUrl,
-                width: MediaQuery.of(context).size.width,
-                height: 200,
-                fit: BoxFit.cover,
-              ),
+            if (isBase64Image)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(25),
+                child: Image.memory(
+                  base64Decode(widget.course.imageUrl),
+                  width: MediaQuery.of(context).size.width,
+                  height: 200,
+                  fit: BoxFit.cover,
+                ),
+              )
+            else if (isValidUrl)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(25),
+                child: Image.network(
+                  widget.course.imageUrl,
+                  width: MediaQuery.of(context).size.width,
+                  height: 200,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return SizedBox.shrink();
+                  },
+                ),
+              )
+            else
+              SizedBox.shrink(),
             Padding(
               padding: EdgeInsets.all(16.0),
               child: Row(
@@ -89,7 +123,6 @@ class _CourseCardState extends State<CourseCard> {
                     child: Text(
                       widget.course.title,
                       style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
-                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   IconButton(
@@ -98,6 +131,21 @@ class _CourseCardState extends State<CourseCard> {
                       color: isFavorite ? Colors.red : null,
                     ),
                     onPressed: toggleFavorite,
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.edit),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => EditCourseScreen(
+                            courseId: widget.course.id,
+                            fetchCourses: widget.fetchCourses,
+                            fetchMyCourses: widget.fetchMyCourses,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),

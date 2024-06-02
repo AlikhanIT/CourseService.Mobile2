@@ -6,6 +6,7 @@ import '../models/lesson.dart';
 import '../models/content_item.dart';
 import '../models/comment.dart';
 import '../models/rating.dart';
+import 'edit_content_screen.dart';
 
 class LessonDetailScreen extends StatefulWidget {
   final Lesson lesson;
@@ -35,6 +36,29 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
   void dispose() {
     _commentController.dispose();
     super.dispose();
+  }
+
+  Future<void> _fetchContentItems() async {
+    try {
+      final response = await http.get(
+        Uri.parse('http://10.0.2.2:5001/api/Courses/GetAllContentItems/${widget.lesson.lessonId}'),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> contentJson = json.decode(response.body);
+        setState(() {
+          _contentItems = contentJson.map((json) => ContentItem.fromJson(json)).toList();
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Не удалось загрузить контент урока')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ошибка при загрузке контента урока: $e')),
+      );
+    }
   }
 
   void _addCommentAndRating(String content, int stars) {
@@ -68,6 +92,7 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
       imageUrl: '', // Assuming no image for simplicity
       lessonId: widget.lesson.lessonId,
       order: _contentItems.length + 1,
+      isDeleted: false,
     );
 
     final response = await http.post(
@@ -161,14 +186,27 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
                     margin: EdgeInsets.symmetric(vertical: 8.0),
                     child: ListTile(
                       title: Text(contentItem.contentText),
-                      subtitle: contentItem.imageUrl.isNotEmpty
-                          ? Image.network(
-                        contentItem.imageUrl,
+                      subtitle: contentItem.imageUrl.isNotEmpty && contentItem.imageUrl.length >100
+                          ? Image.memory(
+                        base64Decode(contentItem.imageUrl),
                         errorBuilder: (context, error, stackTrace) {
                           return Text('Не удалось загрузить изображение');
                         },
                       )
                           : Text('Нет изображения'),
+                      trailing: IconButton(
+                        icon: Icon(Icons.edit),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => EditContentScreen(contentItem: contentItem),
+                            ),
+                          ).then((_) {
+                            _fetchContentItems(); // Refresh the content items after editing
+                          });
+                        },
+                      ),
                     ),
                   );
                 },
@@ -243,9 +281,7 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
                     subtitle: Row(
                       children: List.generate(5, (starIndex) {
                         return Icon(
-                          starIndex < rating.stars
-                              ? Icons.star
-                              : Icons.star_border,
+                          starIndex < rating.stars ? Icons.star : Icons.star_border,
                           color: Colors.amber,
                           size: 16.0,
                         );

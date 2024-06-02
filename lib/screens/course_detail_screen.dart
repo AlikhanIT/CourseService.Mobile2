@@ -94,8 +94,15 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     );
   }
 
+  bool _isBase64(String str) {
+    final base64Pattern = RegExp(r'^[A-Za-z0-9+/=]+\Z');
+    return base64Pattern.hasMatch(str) && str.length % 4 == 0;
+  }
+
   @override
   Widget build(BuildContext context) {
+    bool isBase64Image = widget.course.imageUrl.isNotEmpty && _isBase64(widget.course.imageUrl);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.course.title),
@@ -104,12 +111,20 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Image.network(
-              widget.course.imageUrl,
-              width: MediaQuery.of(context).size.width,
-              height: 200,
-              fit: BoxFit.cover,
-            ),
+            if (isBase64Image)
+              Image.memory(
+                base64Decode(widget.course.imageUrl),
+                width: MediaQuery.of(context).size.width,
+                height: 200,
+                fit: BoxFit.cover,
+              )
+            else
+              Image.network(
+                widget.course.imageUrl,
+                width: MediaQuery.of(context).size.width,
+                height: 200,
+                fit: BoxFit.cover,
+              ),
             Padding(
               padding: EdgeInsets.all(16.0),
               child: Text(

@@ -20,8 +20,8 @@ class Course {
       id: json['courseId'],
       title: json['courseName'],
       description: json['description'],
-      imageUrl: 'https://picsum.photos/500/300', // Подставляем заглушку для URL изображения
-      lessons: [], // Вы можете адаптировать это для включения уроков
+      imageUrl: json['imageUrl'],
+      lessons: [],
     );
   }
 }
