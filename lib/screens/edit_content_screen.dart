@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../models/content_item.dart';
+import '../widgets/content_item.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 
@@ -16,22 +16,22 @@ class EditContentScreen extends StatefulWidget {
 
 class _EditContentScreenState extends State<EditContentScreen> {
   final _formKey = GlobalKey<FormState>();
+  late TextEditingController _titleController;
   late TextEditingController _contentTextController;
-  late TextEditingController _imageUrlController;
   String? _imageBase64;
 
   @override
   void initState() {
     super.initState();
+    _titleController = TextEditingController(text: widget.contentItem.title);
     _contentTextController = TextEditingController(text: widget.contentItem.contentText);
-    _imageUrlController = TextEditingController();
     _imageBase64 = widget.contentItem.imageUrl;
   }
 
   @override
   void dispose() {
+    _titleController.dispose();
     _contentTextController.dispose();
-    _imageUrlController.dispose();
     super.dispose();
   }
 
@@ -41,6 +41,7 @@ class _EditContentScreenState extends State<EditContentScreen> {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'contentItemId': widget.contentItem.contentItemId,
+        'title': _titleController.text,
         'contentText': _contentTextController.text,
         'imageUrl': _imageBase64,
         'order': widget.contentItem.order,
@@ -84,6 +85,17 @@ class _EditContentScreenState extends State<EditContentScreen> {
           key: _formKey,
           child: ListView(
             children: [
+              TextFormField(
+                controller: _titleController,
+                decoration: InputDecoration(labelText: 'Заголовок'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Введите заголовок';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 16),
               TextFormField(
                 controller: _contentTextController,
                 decoration: InputDecoration(labelText: 'Текст контента'),

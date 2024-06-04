@@ -78,83 +78,120 @@ class _CourseCardState extends State<CourseCard> {
     bool isBase64Image = widget.course.imageUrl.isNotEmpty && _isBase64(widget.course.imageUrl);
     bool isValidUrl = widget.course.imageUrl.isNotEmpty && _isValidUrl(widget.course.imageUrl);
 
-    print('isBase64Image: $isBase64Image');
-    print('isValidUrl: $isValidUrl');
-
     return GestureDetector(
       onTap: widget.onPressed,
       child: Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15.0),
+        ),
         margin: EdgeInsets.all(8.0),
         clipBehavior: Clip.antiAlias,
+        elevation: 5,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             if (isBase64Image)
               ClipRRect(
-                borderRadius: BorderRadius.circular(25),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(15.0),
+                  topRight: Radius.circular(15.0),
+                ),
                 child: Image.memory(
                   base64Decode(widget.course.imageUrl),
-                  width: MediaQuery.of(context).size.width,
+                  width: double.infinity,
                   height: 200,
                   fit: BoxFit.cover,
                 ),
               )
             else if (isValidUrl)
               ClipRRect(
-                borderRadius: BorderRadius.circular(25),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(15.0),
+                  topRight: Radius.circular(15.0),
+                ),
                 child: Image.network(
                   widget.course.imageUrl,
-                  width: MediaQuery.of(context).size.width,
+                  width: double.infinity,
                   height: 200,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
-                    return SizedBox.shrink();
+                    return Container(
+                      width: double.infinity,
+                      height: 200,
+                      color: Colors.grey[200],
+                      child: Icon(Icons.broken_image, size: 80, color: Colors.grey),
+                    );
                   },
                 ),
               )
             else
-              SizedBox.shrink(),
+              Container(
+                width: double.infinity,
+                height: 200,
+                color: Colors.grey[200],
+                child: Icon(Icons.image, size: 80, color: Colors.grey),
+              ),
             Padding(
               padding: EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Text(
-                      widget.course.title,
-                      style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
+                  Text(
+                    widget.course.title,
+                    style: TextStyle(
+                      fontSize: 18.0,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
                     ),
                   ),
-                  IconButton(
-                    icon: Icon(
-                      isFavorite ? Icons.favorite : Icons.favorite_border,
-                      color: isFavorite ? Colors.red : null,
+                  SizedBox(height: 8.0),
+                  Text(
+                    widget.course.description,
+                    style: TextStyle(
+                      fontSize: 16.0,
+                      color: Colors.grey[700],
                     ),
-                    onPressed: toggleFavorite,
                   ),
-                  IconButton(
-                    icon: Icon(Icons.edit),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => EditCourseScreen(
-                            courseId: widget.course.id,
-                            fetchCourses: widget.fetchCourses,
-                            fetchMyCourses: widget.fetchMyCourses,
+                  SizedBox(height: 16.0),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              isFavorite ? Icons.favorite : Icons.favorite_border,
+                              color: isFavorite ? Colors.red : Colors.grey,
+                            ),
+                            onPressed: toggleFavorite,
                           ),
+                          IconButton(
+                            icon: Icon(Icons.edit, color: Colors.blue),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => EditCourseScreen(
+                                    courseId: widget.course.id,
+                                    fetchCourses: widget.fetchCourses,
+                                    fetchMyCourses: widget.fetchMyCourses,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                      TextButton(
+                        onPressed: widget.onPressed,
+                        child: Text(
+                          'Подробнее',
+                          style: TextStyle(color: Colors.blue),
                         ),
-                      );
-                    },
+                      ),
+                    ],
                   ),
                 ],
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.0),
-              child: Text(
-                widget.course.description,
-                style: TextStyle(fontSize: 16.0, color: Colors.grey[700]),
               ),
             ),
           ],

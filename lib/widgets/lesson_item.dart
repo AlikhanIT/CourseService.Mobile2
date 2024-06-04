@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import '../models/lesson.dart';
-import '../models/content_item.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../screens/lesson_detail_screen.dart';
+import '../screens/edit_lesson_screen.dart';
+import 'content_item.dart';
 
 class LessonItem extends StatelessWidget {
   final Lesson lesson;
@@ -35,10 +36,23 @@ class LessonItem extends StatelessWidget {
           lesson.title,
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18.0),
         ),
-        subtitle: lesson.description.isNotEmpty
-            ? Text(lesson.description)
-            : Text('Без описания'),
-        trailing: Icon(Icons.arrow_forward_ios),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: Icon(Icons.edit),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => EditLessonScreen(lesson: lesson),
+                  ),
+                );
+              },
+            ),
+            Icon(Icons.arrow_forward_ios),
+          ],
+        ),
         onTap: () async {
           try {
             final contentItems = await fetchContentItems(lesson.lessonId);

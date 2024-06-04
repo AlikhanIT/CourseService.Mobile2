@@ -95,17 +95,18 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
   }
 
   bool _isBase64(String str) {
-    final base64Pattern = RegExp(r'^[A-Za-z0-9+/=]+\Z');
-    return base64Pattern.hasMatch(str) && str.length % 4 == 0;
+    return str.length > 200;
   }
 
   @override
   Widget build(BuildContext context) {
     bool isBase64Image = widget.course.imageUrl.isNotEmpty && _isBase64(widget.course.imageUrl);
+    bool isValidUrl = widget.course.imageUrl.isNotEmpty && Uri.tryParse(widget.course.imageUrl)?.hasAbsolutePath == true;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.course.title),
+        backgroundColor: Colors.blue,
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -118,26 +119,40 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                 height: 200,
                 fit: BoxFit.cover,
               )
-            else
+            else if (isValidUrl)
               Image.network(
                 widget.course.imageUrl,
                 width: MediaQuery.of(context).size.width,
                 height: 200,
                 fit: BoxFit.cover,
+              )
+            else
+              Container(
+                width: MediaQuery.of(context).size.width,
+                height: 200,
+                color: Colors.grey[200],
+                child: Center(
+                  child: Icon(
+                    Icons.image,
+                    size: 100,
+                    color: Colors.grey[400],
+                  ),
+                ),
               ),
-            Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Text(
-                widget.course.description,
-                style: TextStyle(fontSize: 18.0),
+            if (widget.course.description.isNotEmpty)
+              Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text(
+                  widget.course.description,
+                  style: TextStyle(fontSize: 18.0, color: Colors.black87),
+                ),
               ),
-            ),
             Divider(),
             Padding(
               padding: EdgeInsets.all(8.0),
               child: Text(
                 'Уроки',
-                style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold, color: Colors.black87),
               ),
             ),
             ...lessons.map((lesson) => LessonItem(lesson: lesson)).toList(),
@@ -146,7 +161,8 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => addLesson(context),
-        child: Icon(Icons.add),
+        child: Icon(Icons.add, color: Colors.white),
+        backgroundColor: Colors.blue,
       ),
     );
   }

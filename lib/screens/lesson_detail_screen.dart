@@ -3,9 +3,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 import '../models/lesson.dart';
-import '../models/content_item.dart';
 import '../models/comment.dart';
 import '../models/rating.dart';
+import '../widgets/content_item.dart';
 import 'edit_content_screen.dart';
 
 class LessonDetailScreen extends StatefulWidget {
@@ -25,6 +25,8 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
   final _commentController = TextEditingController();
   int _selectedStars = 0;
   final _uuid = Uuid();
+
+  String userRole = 'user'; // Example role, replace with actual role management
 
   @override
   void initState() {
@@ -85,9 +87,10 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
     });
   }
 
-  Future<void> _addContentItem(String contentText) async {
+  Future<void> _addContentItem(String title, String contentText) async {
     final newContentItem = ContentItem(
       contentItemId: _uuid.v4(),
+      title: title,
       contentText: contentText,
       imageUrl: '', // Assuming no image for simplicity
       lessonId: widget.lesson.lessonId,
@@ -100,6 +103,7 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'lessonId': newContentItem.lessonId,
+        'title': newContentItem.title,
         'contentText': newContentItem.contentText,
         'imageUrl': newContentItem.imageUrl,
         'order': newContentItem.order,
@@ -121,6 +125,7 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
   }
 
   Future<void> _showAddContentDialog(BuildContext context) async {
+    String title = '';
     String contentText = '';
 
     showDialog(
@@ -128,18 +133,29 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
       builder: (context) {
         return AlertDialog(
           title: Text('Добавить новый контент'),
-          content: TextField(
-            decoration: InputDecoration(hintText: 'Введите текст контента'),
-            onChanged: (value) {
-              contentText = value;
-            },
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                decoration: InputDecoration(hintText: 'Введите заголовок контента'),
+                onChanged: (value) {
+                  title = value;
+                },
+              ),
+              TextField(
+                decoration: InputDecoration(hintText: 'Введите текст контента'),
+                onChanged: (value) {
+                  contentText = value;
+                },
+              ),
+            ],
           ),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                if (contentText.isNotEmpty) {
-                  _addContentItem(contentText);
+                if (title.isNotEmpty && contentText.isNotEmpty) {
+                  _addContentItem(title, contentText);
                 }
               },
               child: Text('Добавить'),
@@ -147,6 +163,72 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildContentItemCard(ContentItem contentItem) {
+    return Card(
+      margin: EdgeInsets.symmetric(vertical: 8.0),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8.0),
+      ),
+      elevation: 4.0,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              contentItem.title,
+              style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 8.0),
+            if (contentItem.imageUrl.isNotEmpty && contentItem.imageUrl.length > 100)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8.0),
+                child: Image.memory(
+                  base64Decode(contentItem.imageUrl),
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Text('Не удалось загрузить изображение');
+                  },
+                ),
+              ),
+            SizedBox(height: 8.0),
+            Align(
+              alignment: Alignment.center,
+              child: Text(
+                contentItem.contentText,
+                style: TextStyle(fontSize: 16.0),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            if (userRole == 'user')
+              Align(
+                alignment: Alignment.bottomRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => EditContentScreen(contentItem: contentItem),
+                        ),
+                      ).then((_) {
+                        _fetchContentItems(); // Refresh the content items after editing
+                      });
+                    },
+                    icon: Icon(Icons.edit, size: 18),
+                    label: Text("Редактировать"),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -164,17 +246,17 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
             children: <Widget>[
               Text(
                 widget.lesson.title,
-                style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold, color: Colors.black87),
               ),
               SizedBox(height: 16.0),
               Text(
                 widget.lesson.description.isNotEmpty ? widget.lesson.description : 'Без описания',
-                style: TextStyle(fontSize: 16.0),
+                style: TextStyle(fontSize: 16.0, color: Colors.black54),
               ),
               SizedBox(height: 24.0),
               Text(
                 'Элементы содержания:',
-                style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold, color: Colors.black87),
               ),
               ListView.builder(
                 shrinkWrap: true,
@@ -182,39 +264,13 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
                 itemCount: _contentItems.length,
                 itemBuilder: (context, index) {
                   final contentItem = _contentItems[index];
-                  return Card(
-                    margin: EdgeInsets.symmetric(vertical: 8.0),
-                    child: ListTile(
-                      title: Text(contentItem.contentText),
-                      subtitle: contentItem.imageUrl.isNotEmpty && contentItem.imageUrl.length >100
-                          ? Image.memory(
-                        base64Decode(contentItem.imageUrl),
-                        errorBuilder: (context, error, stackTrace) {
-                          return Text('Не удалось загрузить изображение');
-                        },
-                      )
-                          : Text('Нет изображения'),
-                      trailing: IconButton(
-                        icon: Icon(Icons.edit),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => EditContentScreen(contentItem: contentItem),
-                            ),
-                          ).then((_) {
-                            _fetchContentItems(); // Refresh the content items after editing
-                          });
-                        },
-                      ),
-                    ),
-                  );
+                  return _buildContentItemCard(contentItem);
                 },
               ),
               SizedBox(height: 24.0),
               Text(
-                'Комментарии:',
-                style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
+                'Комментарии и оценки:',
+                style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold, color: Colors.black87),
               ),
               ListView.builder(
                 shrinkWrap: true,
@@ -222,86 +278,87 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
                 itemCount: _comments.length,
                 itemBuilder: (context, index) {
                   final comment = _comments[index];
-                  return ListTile(
-                    title: Text(comment.username),
-                    subtitle: Text(comment.content),
-                    trailing: Text(
-                      '${comment.timestamp.hour}:${comment.timestamp.minute}',
-                      style: TextStyle(fontSize: 12.0, color: Colors.grey),
-                    ),
-                  );
-                },
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: TextField(
-                  controller: _commentController,
-                  decoration: InputDecoration(
-                    labelText: 'Добавить комментарий',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ),
-              Text(
-                'Оценка:',
-                style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(5, (index) {
-                  return IconButton(
-                    icon: Icon(
-                      index < _selectedStars ? Icons.star : Icons.star_border,
-                      color: Colors.amber,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _selectedStars = index + 1;
-                      });
-                    },
-                  );
-                }),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  if (_commentController.text.isNotEmpty && _selectedStars > 0) {
-                    _addCommentAndRating(_commentController.text, _selectedStars);
-                  }
-                },
-                child: Text('Отправить комментарий и оценку'),
-              ),
-              ListView.builder(
-                shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
-                itemCount: _ratings.length,
-                itemBuilder: (context, index) {
                   final rating = _ratings[index];
+
                   return ListTile(
-                    title: Text(rating.username),
-                    subtitle: Row(
-                      children: List.generate(5, (starIndex) {
-                        return Icon(
-                          starIndex < rating.stars ? Icons.star : Icons.star_border,
-                          color: Colors.amber,
-                          size: 16.0,
-                        );
-                      }),
+                    title: Text(
+                      comment.username,
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(comment.content),
+                        SizedBox(height: 8.0),
+                        Row(
+                          children: List.generate(5, (starIndex) {
+                            return Icon(
+                              Icons.star,
+                              color: starIndex < rating.stars ? Colors.amber : Colors.grey,
+                              size: 20.0,
+                            );
+                          }),
+                        ),
+                      ],
                     ),
                     trailing: Text(
-                      '${rating.timestamp.hour}:${rating.timestamp.minute}',
+                      comment.timestamp.toString(),
                       style: TextStyle(fontSize: 12.0, color: Colors.grey),
                     ),
                   );
                 },
               ),
+              SizedBox(height: 16.0),
+              if (userRole == 'user')
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextField(
+                      controller: _commentController,
+                      decoration: InputDecoration(hintText: 'Введите комментарий'),
+                    ),
+                    Row(
+                      children: [
+                        Text('Оцените урок:'),
+                        SizedBox(width: 8.0),
+                        Row(
+                          children: List.generate(5, (index) {
+                            return IconButton(
+                              icon: Icon(
+                                Icons.star,
+                                color: index < _selectedStars ? Colors.amber : Colors.grey,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _selectedStars = index + 1;
+                                });
+                              },
+                            );
+                          }),
+                        ),
+                      ],
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        final comment = _commentController.text;
+                        if (comment.isNotEmpty && _selectedStars > 0) {
+                          _addCommentAndRating(comment, _selectedStars);
+                        }
+                      },
+                      child: Text('Добавить комментарий и оценку'),
+                    ),
+                  ],
+                ),
             ],
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: userRole == 'user'
+          ? FloatingActionButton(
         onPressed: () => _showAddContentDialog(context),
         child: Icon(Icons.add),
-      ),
+      )
+          : null,
     );
   }
 }

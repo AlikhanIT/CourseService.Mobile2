@@ -35,6 +35,7 @@ class CourseScreen extends StatelessWidget {
 
   Future<void> addNewCourse(BuildContext context) async {
     String courseName = '';
+    final scaffoldContext = context;
 
     showDialog(
       context: context,
@@ -58,18 +59,18 @@ class CourseScreen extends StatelessWidget {
                     );
 
                     if (response.statusCode == 200 || response.statusCode == 201) {
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      ScaffoldMessenger.of(scaffoldContext).showSnackBar(
                         SnackBar(content: Text('Курс успешно добавлен')),
                       );
                       await fetchCourses();
                       await fetchMyCourses();
                     } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      ScaffoldMessenger.of(scaffoldContext).showSnackBar(
                         SnackBar(content: Text('Ошибка при добавлении курса')),
                       );
                     }
                   } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    ScaffoldMessenger.of(scaffoldContext).showSnackBar(
                       SnackBar(content: Text('Ошибка при добавлении курса')),
                     );
                   }
